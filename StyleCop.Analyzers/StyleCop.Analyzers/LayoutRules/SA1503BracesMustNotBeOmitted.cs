@@ -124,6 +124,11 @@ namespace StyleCop.Analyzers.LayoutRules
                 }
             }
 
+            if (clauses.All(c => GF1503BracesMustBeOmitted.IsSimpleOneLineStatement(c)))
+            {
+                return;
+            }
+
             foreach (StatementSyntax clause in clauses)
             {
                 CheckChildStatement(context, clause);
@@ -141,24 +146,35 @@ namespace StyleCop.Analyzers.LayoutRules
             CheckChildStatement(context, usingStatement.Statement);
         }
 
-        private static void CheckChildStatement(SyntaxNodeAnalysisContext context, StatementSyntax childStatement)
+        private static bool NeedReport(SyntaxNodeAnalysisContext context, StatementSyntax childStatement, out StatementSyntax outStatement)
         {
+            outStatement = null;
             if (childStatement is BlockSyntax)
             {
-                return;
+                return false;
+            }
+
+            if (GF1503BracesMustBeOmitted.IsOneLineStatement(childStatement))
+            {
+                return false;
             }
 
             if (!context.IsAnalyzerSuppressed(SA1519BracesMustNotBeOmittedFromMultiLineChildStatement.Descriptor))
             {
                 // diagnostics for multi-line statements is handled by SA1519, as long as it's not suppressed
-                FileLinePositionSpan lineSpan = childStatement.GetLineSpan();
-                if (lineSpan.StartLinePosition.Line != lineSpan.EndLinePosition.Line)
-                {
-                    return;
-                }
+                return false;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Descriptor, childStatement.GetLocation()));
+            outStatement = childStatement;
+            return true;
+        }
+
+        private static void CheckChildStatement(SyntaxNodeAnalysisContext context, StatementSyntax childStatement)
+        {
+            if (NeedReport(context, childStatement, out StatementSyntax outStatement))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Descriptor, outStatement.GetLocation()));
+            }
         }
     }
 }
