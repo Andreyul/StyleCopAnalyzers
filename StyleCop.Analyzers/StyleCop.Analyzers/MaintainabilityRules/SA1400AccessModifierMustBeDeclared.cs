@@ -147,7 +147,27 @@ namespace StyleCop.Analyzers.MaintainabilityRules
                 return;
             }
 
-            CheckAccessModifiers(context, declarator.Identifier, syntax.Modifiers, declarator);
+            var name = CheckAccessModifiersAndGetDiagnosticName(context, declarator.Identifier, syntax.Modifiers, declarator);
+            if (name != null)
+            {
+                var s = syntax.ToString();
+
+                bool ignore = false;
+                if (syntax.AttributeLists.Count >= 1)
+                {
+                    AttributeListSyntax firstAttrList = syntax.AttributeLists[0];
+                    var firstAttrName = firstAttrList.Attributes[0].Name.ToString();
+                    if (firstAttrName.ToString().Equals("SerializeField"))
+                    {
+                        ignore = true;
+                    }
+                }
+
+                if (!ignore)
+                {
+                    Report(context, declarator.Identifier, name);
+                }
+            }
         }
 
         private static void HandleIndexerDeclaration(SyntaxNodeAnalysisContext context)
@@ -174,9 +194,15 @@ namespace StyleCop.Analyzers.MaintainabilityRules
 
         private static void CheckAccessModifiers(SyntaxNodeAnalysisContext context, SyntaxToken identifier, SyntaxTokenList modifiers, SyntaxNode declarationNode = null)
         {
+            string name = CheckAccessModifiersAndGetDiagnosticName(context, identifier, modifiers, declarationNode);
+            Report(context, identifier, name);
+        }
+
+        private static string CheckAccessModifiersAndGetDiagnosticName(SyntaxNodeAnalysisContext context, SyntaxToken identifier, SyntaxTokenList modifiers, SyntaxNode declarationNode = null)
+        {
             if (identifier.IsMissing)
             {
-                return;
+                return null;
             }
 
             foreach (SyntaxToken token in modifiers)
@@ -187,19 +213,19 @@ namespace StyleCop.Analyzers.MaintainabilityRules
                 case SyntaxKind.ProtectedKeyword:
                 case SyntaxKind.InternalKeyword:
                 case SyntaxKind.PrivateKeyword:
-                    return;
+                    return null;
 
                 case SyntaxKind.StaticKeyword:
                     if (context.Node is ConstructorDeclarationSyntax)
                     {
-                        return;
+                        return null;
                     }
 
                     break;
 
                 case SyntaxKind.PartialKeyword:
                     // the access modifier might be declared on another part, which isn't handled at this time
-                    return;
+                    return null;
 
                 default:
                     break;
@@ -211,10 +237,19 @@ namespace StyleCop.Analyzers.MaintainabilityRules
             string name = symbol?.Name;
             if (string.IsNullOrEmpty(name))
             {
-                return;
+                return null;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(Descriptor, identifier.GetLocation(), name));
+            return name;
+        }
+
+        private static void Report(SyntaxNodeAnalysisContext context, SyntaxToken identifier, string name)
+        {
+            if (name != null)
+            {
+                var diagnostic = Diagnostic.Create(Descriptor, identifier.GetLocation(), name);
+                context.ReportDiagnostic(diagnostic);
+            }
         }
     }
 }

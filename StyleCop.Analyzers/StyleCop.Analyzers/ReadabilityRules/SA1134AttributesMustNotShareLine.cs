@@ -87,14 +87,19 @@ namespace StyleCop.Analyzers.ReadabilityRules
                 // do not report for trailing attribute lists, to prevent unnecessary diagnostics and issues with the code fix
                 if ((nextTokenLineSpan.EndLinePosition.Line == attributeListLineSpan.EndLinePosition.Line) && !nextToken.Parent.IsKind(SyntaxKind.AttributeList))
                 {
-                    diagnosticProperties.Add(FixWithNewLineAfterKey, string.Empty);
-                    violation = true;
+                    bool ignore = attributeList.Attributes.Count >= 1 && attributeList.Attributes[0].Name.ToString().Equals("SerializeField");
+                    if (!ignore)
+                    {
+                        diagnosticProperties.Add(FixWithNewLineAfterKey, string.Empty);
+                        violation = true;
+                    }
                 }
             }
 
             if (violation)
             {
-                context.ReportDiagnostic(Diagnostic.Create(Descriptor, attributeList.OpenBracketToken.GetLocation(), diagnosticProperties.ToImmutable()));
+                Location location = attributeList.GetLocation();
+                context.ReportDiagnostic(Diagnostic.Create(Descriptor, location, diagnosticProperties.ToImmutable()));
             }
         }
     }
