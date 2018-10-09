@@ -82,7 +82,7 @@ namespace StyleCop.Analyzers.LayoutRules
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
             // If SA1503 is suppressed, we need to handle compound blocks as well.
-            if (context.IsAnalyzerSuppressed(SA1503BracesMustNotBeOmitted.Descriptor))
+            if (true || context.IsAnalyzerSuppressed(SA1503BracesMustNotBeOmitted.Descriptor))
             {
                 context.RegisterSyntaxNodeAction(HandleIfStatement, SyntaxKind.IfStatement);
                 context.RegisterSyntaxNodeAction(ctx => CheckChildStatement(ctx, ctx.Node, ((DoStatementSyntax)ctx.Node).Statement), SyntaxKind.DoStatement);
