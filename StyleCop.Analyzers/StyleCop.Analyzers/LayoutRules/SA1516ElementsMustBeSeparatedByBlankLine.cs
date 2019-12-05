@@ -304,9 +304,18 @@ namespace StyleCop.Analyzers.LayoutRules
                     //
                     // Note that the order of checking is important, as the call to IsMultiLine requires a FieldDeclarationSyntax,
                     // something that can only be guaranteed if the first two checks fail.
-                    if (!members[i].IsKind(SyntaxKind.FieldDeclaration)
-                        || !members[i - 1].IsKind(members[i].Kind())
-                        || IsMultiline((FieldDeclarationSyntax)members[i - 1]))
+                    // if (!members[i].IsKind(SyntaxKind.FieldDeclaration)
+                    //    || !members[i - 1].IsKind(members[i].Kind())
+                    //    || IsMultiline((FieldDeclarationSyntax)members[i - 1]))
+                    // {
+                    //    ReportIfThereIsNoBlankLine(context, members[i - 1], members[i]);
+                    // }
+
+                    // Report if
+                    // the previous declaration is of different type
+                    // or the previous declaration is multiline
+                    // or the current declaration is multiline
+                    if (!members[i].IsKind(members[i - 1].Kind()) || IsMultiline(members[i]) || IsMultiline(members[i - 1]))
                     {
                         ReportIfThereIsNoBlankLine(context, members[i - 1], members[i]);
                     }
@@ -332,6 +341,13 @@ namespace StyleCop.Analyzers.LayoutRules
                 startLine = lineSpan.StartLinePosition.Line;
             }
 
+            return startLine != lineSpan.EndLinePosition.Line;
+        }
+
+        private static bool IsMultiline(SyntaxNode memberDeclaration)
+        {
+            var lineSpan = memberDeclaration.GetLineSpan();
+            int startLine = lineSpan.StartLinePosition.Line;
             return startLine != lineSpan.EndLinePosition.Line;
         }
 
